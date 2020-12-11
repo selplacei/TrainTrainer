@@ -15,5 +15,18 @@
 ]]
 
 local flib = require("__flib__.data-util")
-local traintrainer_stop = flib.copy_prototype(data.raw["item"]["train-stop"], "traintrainer-stop")
-data:extend{traintrainer_stop}
+
+
+-- Train spawner stop
+local train_spawner_stop = flib.copy_prototype(data.raw["item"]["train-stop"], "train-spawner-stop")
+
+
+-- Train void stop
+local train_void_stop = flib.copy_prototype(data.raw["item"]["train-stop"], "train-void-stop")
+
+
+-- Train meter stop
+local train_meter_stop = flib.copy_prototype(data.raw["item"]["train-stop"], "train-meter-stop")
+
+
+data:extend{train_spawner_stop, train_void_stop, train_meter_stop}

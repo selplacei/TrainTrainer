@@ -15,3 +15,27 @@
 ]]
 
 local flib = require("__flib__.data-util")
+
+
+-- Train spawner stop
+local train_spawner_stop = flib.copy_prototype(data.raw["recipe"]["train-stop"], "train-spawner-stop")
+train_spawner_stop.result = 'train-spawner-stop'
+train_spawner_stop.ingredients = {}
+train_spawner_stop.enabled = true
+
+
+-- Train void stop
+local train_void_stop = flib.copy_prototype(data.raw["recipe"]["train-stop"], "train-void-stop")
+train_void_stop.result = 'train-void-stop'
+train_void_stop.ingredients = {}
+train_void_stop.enabled = true
+
+
+-- Train meter stop
+local train_meter_stop = flib.copy_prototype(data.raw["recipe"]["train-stop"], "train-meter-stop")
+train_meter_stop.result = 'train-meter-stop'
+train_meter_stop.ingredients = {}
+train_meter_stop.enabled = true
+
+
+data:extend{train_spawner_stop, train_void_stop, train_meter_stop}
