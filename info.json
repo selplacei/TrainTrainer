@@ -1,0 +1,9 @@
+{
+    "name": "traintrainer",
+    "version": "0.0.0",
+    "title": "TrainTrainer",
+    "author": "selplacei",
+    "factorio_version": "1.1",
+    "dependencies": ["flib"],
+    "description": "Testing tools for trains and railways, including configurable stations that can spawn and destroy trains out of thin air."
+}
