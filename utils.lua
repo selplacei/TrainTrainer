@@ -16,6 +16,8 @@
 local utils = {}
 
 function utils.conditional(condition, on_true, on_false)
+    -- A prettier way to write `if X then Y else Z end`
+    -- The "ternary operator" (X and Y or Z) doesn't work if Y is false
     if condition then
         return on_true
     end

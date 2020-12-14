@@ -18,7 +18,11 @@ local flib_misc = require("__flib__.misc")
 local utils = require("utils")
 
 local function get_next_rail(rail, direction)
-    for _, conn_direction in pairs{defines.rail_connection_direction.straight, defines.rail_connection_direction.left, defines.rail_connection_direction.right} do
+    for _, conn_direction in pairs{
+        defines.rail_connection_direction.straight,
+        defines.rail_connection_direction.left,
+        defines.rail_connection_direction.right
+    } do
         local next_rail = rail.get_connected_rail{rail_direction=direction, rail_connection_direction=conn_direction}
         if next_rail then
             return next_rail
@@ -94,7 +98,16 @@ end
 
 local function clone_train(source_stop, destination_stop)
     -- Returns the LuaTrain instance if successful, nil otherwise
-    local source_train = source_stop.get_stopped_train()
+    local source_first_carriage_position = get_first_carriage_position(source_stop)
+    local source_train = source_stop.surface.find_entities_filtered{
+        type={
+            "locomotive", "cargo-wagon", "fluid-wagon", "artillery-wagon"
+        },
+        area={
+            {x=source_first_carriage_position.x - 2, y=source_first_carriage_position.y - 2},
+            {x=source_first_carriage_position.x + 2, y=source_first_carriage_position.y + 2}
+        }
+    }[1].train
     if source_train == nil then
         return
     end
@@ -146,12 +159,16 @@ end
 script.on_event(
     defines.events.on_built_entity,
     function(event)
-        local source_stop = event.created_entity.surface.get_train_stops{name="TT_SOURCE"}[1]
-        if source_stop == nil then
-            game.print("No source stop! It should be named 'TT_SOURCE'.")
-        else
-            clone_train(source_stop, event.created_entity)
-        end
+        script.on_nth_tick(200, function(...)
+            local source_stop = event.created_entity.surface.get_train_stops{name="TT_SOURCE"}[1]
+            if source_stop == nil then
+                game.print("No source stop! It should be named 'TT_SOURCE'.")
+            else
+                local train = clone_train(source_stop, event.created_entity)
+                if train == nil then return end
+                train.go_to_station(1)
+            end
+        end)
     end,
     {{filter="name", name="train-spawner-stop"}}
 )
