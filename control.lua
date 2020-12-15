@@ -15,3 +15,4 @@
 ]]
 
 require("scripts.spawner")
+require("scripts.void")
