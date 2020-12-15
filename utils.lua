@@ -24,4 +24,35 @@ function utils.conditional(condition, on_true, on_false)
     return on_false
 end
 
+function utils.on_any_entity_created(fn, filters)
+    -- Register a callback when an entity is created in any way. `fn` should take the LuaEntity object as a single argument.
+    script.on_event(
+        defines.events.on_built_entity,
+        function(event) fn(event.created_entity) end,
+        filters
+    )
+    script.on_event(
+        defines.events.on_robot_built_entity,
+        function(event) fn(event.created_entity) end,
+        filters
+    )
+
+    script.on_event(
+        defines.events.script_raised_built,
+        function(event) fn(event.entity) end,
+        filters
+    )
+    script.on_event(
+        defines.events.script_raised_revive,
+        function(event) fn(event.entity) end,
+        filters
+    )
+
+    script.on_event(
+        defines.events.on_entity_cloned,
+        function(event) fn(event.destination) end,
+        filters
+    )
+end
+
 return utils

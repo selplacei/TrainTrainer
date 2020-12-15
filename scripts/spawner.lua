@@ -17,6 +17,8 @@
 local flib_misc = require("__flib__.misc")
 local utils = require("utils")
 
+local spawn_on_ticks = nil
+
 local function get_next_rail(rail, direction)
     for _, conn_direction in pairs{
         defines.rail_connection_direction.straight,
@@ -99,7 +101,7 @@ end
 local function clone_train(source_stop, destination_stop)
     -- Returns the LuaTrain instance if successful, nil otherwise
     local source_first_carriage_position = get_first_carriage_position(source_stop)
-    local source_train = source_stop.surface.find_entities_filtered{
+    local source_carriages = source_stop.surface.find_entities_filtered{
         type={
             "locomotive", "cargo-wagon", "fluid-wagon", "artillery-wagon"
         },
@@ -107,10 +109,11 @@ local function clone_train(source_stop, destination_stop)
             {x=source_first_carriage_position.x - 2, y=source_first_carriage_position.y - 2},
             {x=source_first_carriage_position.x + 2, y=source_first_carriage_position.y + 2}
         }
-    }[1].train
-    if source_train == nil then
+    }
+    if source_carriages == nil or #source_carriages == 0 then
         return
     end
+    local source_train = source_carriages[1].train
     local destination_rail = destination_stop.connected_rail
     if destination_rail == nil or destination_rail.trains_in_block > 0 then
         return
@@ -137,6 +140,7 @@ local function clone_train(source_stop, destination_stop)
     local destination_train = first_carriage.train
     for i, carriage in ipairs(source_train.carriages) do
         if i > 1 then
+            -- TODO: instead of taking an arbitrary direction in case of a split, perform a search on possible paths and pick one that's long enough
             local new_position = get_next_carriage_position(destination_train, growth_direction)
             if new_position == nil then
                 return
@@ -155,20 +159,54 @@ local function clone_train(source_stop, destination_stop)
     return destination_train
 end
 
+local register_spawn_tick
+
+local function trigger_spawner(stop)
+    if not stop or not stop.valid then return end
+    local source_stop = stop.surface.get_train_stops{name="TT_SOURCE"}[1]
+    if source_stop then
+        local train = clone_train(source_stop, stop)
+        if train then
+            train.go_to_station(1)
+        end
+    end
+    register_spawn_tick(game.tick + 200, stop)
+end
+
+register_spawn_tick = function(tick, stop)
+    if spawn_on_ticks[tick] == nil then
+        spawn_on_ticks[tick] = {function() trigger_spawner(stop) end}
+    else
+        table.insert(spawn_on_ticks[tick], function() trigger_spawner(stop) end)
+    end
+end
+
+script.on_init(
+    function()
+        global.spawn_on_ticks = {}
+    end
+)
+
+script.on_load(
+    function()
+        spawn_on_ticks = global.spawn_on_ticks
+    end
+)
 
 script.on_event(
-    defines.events.on_built_entity,
+    defines.events.on_tick,
     function(event)
-        script.on_nth_tick(200, function(...)
-            local source_stop = event.created_entity.surface.get_train_stops{name="TT_SOURCE"}[1]
-            if source_stop == nil then
-                game.print("No source stop! It should be named 'TT_SOURCE'.")
-            else
-                local train = clone_train(source_stop, event.created_entity)
-                if train == nil then return end
-                train.go_to_station(1)
+        local tick = event.tick
+        if spawn_on_ticks[tick] ~= nil then
+            for _, f in pairs(spawn_on_ticks[tick]) do
+                f()
             end
-        end)
-    end,
+            spawn_on_ticks[tick] = nil
+        end
+    end
+)
+
+utils.on_any_entity_created(
+    trigger_spawner,
     {{filter="name", name="train-spawner-stop"}}
 )
