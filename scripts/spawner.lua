@@ -115,6 +115,7 @@ local function clone_train(source_stop, destination_stop)
     end
     local source_train = source_carriages[1].train
     local destination_rail = destination_stop.connected_rail
+    -- TODO: consider a way of detecting that a block is about to be occupied (i.e. yellow signal state)
     if destination_rail == nil or destination_rail.trains_in_block > 0 then
         return
     end
@@ -134,6 +135,9 @@ local function clone_train(source_stop, destination_stop)
     ).clone{
         position=get_first_carriage_position(destination_stop)
     }
+    if first_carriage == nil then return end
+    first_carriage.disconnect_rolling_stock(defines.rail_direction.front)
+    first_carriage.disconnect_rolling_stock(defines.rail_direction.back)
     if orientation_to_cardinal_direction(first_carriage.orientation) ~= destination_stop.direction then
         first_carriage.rotate()
     end
@@ -143,7 +147,7 @@ local function clone_train(source_stop, destination_stop)
             -- TODO: instead of taking an arbitrary direction in case of a split, perform a search on possible paths and pick one that's long enough
             local new_position = get_next_carriage_position(destination_train, growth_direction)
             if new_position == nil then
-                return
+                return destination_train
             end
             local new_carriage = carriage.clone{position=new_position}
             -- TODO: test if locomotive direction is always preserved
@@ -151,7 +155,7 @@ local function clone_train(source_stop, destination_stop)
                 game.print({"", "Failed to spawn all carriages for train spawner stop ", destination_stop.backer_name})
                 game.print({"", "Attempted to spawn at ", new_position})
                 game.print({"", "Front rail: ", destination_train.front_rail.position, "; back rail: ", destination_train.back_rail.position})
-                return
+                return destination_train
             end
             destination_train = new_carriage.train
         end
